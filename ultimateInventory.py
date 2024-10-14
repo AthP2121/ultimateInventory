@@ -1,9 +1,12 @@
 import sqlite3
 import os
+import sys
 
 # Define the path relative to the executable's directory
-base_dir = os.path.dirname(os.path.abspath(__file__))
+base_dir = os.path.dirname(os.path.abspath(sys.executable))
 db_path = os.path.join(base_dir, 'stocktake.db')
+
+# Rest of your code that references db_path for connecting to the database...
 
 # Connect to the SQLite database
 conn = sqlite3.connect(db_path)
