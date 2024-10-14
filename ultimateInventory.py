@@ -1,6 +1,3 @@
-# this is a funny name for a file
-
-
 import sqlite3
 import os
 
@@ -27,9 +24,18 @@ conn.commit()
 # Function to add a new component
 def add_component():
     name = input("Enter component name: ")
-    quantity = int(input("Enter quantity: "))
+    
+    # Handle non-integer quantity input with detailed error messages
+    while True:
+        try:
+            quantity = int(input("Enter quantity (whole number): "))
+            break
+        except ValueError:
+            print("Error: Quantity must be a whole number (integer). Please try again.")
+    
     location = input("Enter location: ")
     category = input("Enter category: ")
+    
     cursor.execute('''
     INSERT INTO components (name, quantity, location, category)
     VALUES (?, ?, ?, ?)
@@ -50,7 +56,15 @@ def remove_component():
 # Function to update the quantity of a component
 def update_component():
     name = input("Enter component name to update: ")
-    quantity = int(input("Enter new quantity: "))
+    
+    # Handle non-integer quantity input with detailed error messages
+    while True:
+        try:
+            quantity = int(input("Enter new quantity (whole number): "))
+            break
+        except ValueError:
+            print("Error: Quantity must be a whole number (integer). Please try again.")
+    
     cursor.execute('''
     UPDATE components
     SET quantity = ?
@@ -90,7 +104,7 @@ def main():
         elif choice == '5':
             break
         else:
-            print("Invalid choice. Please try again.\n")
+            print("Invalid choice. Please select a valid option (1-5).\n")
 
     # Close the connection when exiting the application
     conn.close()
