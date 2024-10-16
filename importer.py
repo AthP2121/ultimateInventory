@@ -4,26 +4,23 @@ import csv
 import sys
 
 # Define paths for the database and import file
-base_dir = os.path.dirname(os.path.abspath(sys.executable))  # For the compiled .exe
+base_dir = os.path.dirname(os.path.abspath(sys.executable))  # Path for the compiled .exe
 db_path = os.path.join(base_dir, 'stocktake.db')
 csv_path = os.path.join(base_dir, 'components_import.csv')
-
-# Debugging: Print paths to ensure correctness
-print(f"Database path: {db_path}")
-print(f"CSV path: {csv_path}")
 
 # Connect to the SQLite database
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-# Create the components table if it doesn't exist
+# Create the components table if it doesn't exist, including the value column
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS components (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     quantity INTEGER NOT NULL,
     location TEXT,
-    category TEXT
+    category TEXT,
+    value TEXT
 )
 ''')
 conn.commit()
@@ -34,10 +31,10 @@ def create_template_csv():
     with open(csv_path, 'w', newline='') as file:
         writer = csv.writer(file)
         # Write the headers
-        writer.writerow(['name', 'quantity', 'location', 'category'])
+        writer.writerow(['name', 'quantity', 'location', 'category', 'value'])
     print(f"Template CSV file created at {csv_path}.")
     print("Please fill it with your component data and run this program again.")
-    print("Each row should contain the component's name, quantity (as a whole number), location, and category.")
+    print("Each row should contain the component's name, quantity (whole number), location, category, and value (e.g., resistance, capacitance).")
 
 # Function to import data from CSV file
 def import_from_csv():
@@ -48,10 +45,10 @@ def import_from_csv():
     print("Found CSV file. Starting import...")
     with open(csv_path, 'r') as file:
         reader = csv.DictReader(file)
-        # Check for correct headers
-        if reader.fieldnames != ['name', 'quantity', 'location', 'category']:
+        # Validate headers
+        if reader.fieldnames != ['name', 'quantity', 'location', 'category', 'value']:
             print("Error: CSV file headers are incorrect.")
-            print("Headers should be: name, quantity, location, category.")
+            print("Headers should be: name, quantity, location, category, value.")
             return
 
         # Import each row from the CSV file into the database
@@ -61,13 +58,14 @@ def import_from_csv():
                 quantity = int(row['quantity'])  # Convert quantity to integer
                 location = row['location']
                 category = row['category']
+                value = row['value']
 
                 cursor.execute('''
-                INSERT INTO components (name, quantity, location, category)
-                VALUES (?, ?, ?, ?)
-                ''', (name, quantity, location, category))
+                INSERT INTO components (name, quantity, location, category, value)
+                VALUES (?, ?, ?, ?, ?)
+                ''', (name, quantity, location, category, value))
                 conn.commit()
-                print(f"Imported component '{name}' successfully.")
+                print(f"Imported component '{name}' with value '{value}' successfully.")
             except ValueError:
                 print(f"Error: Quantity for component '{row['name']}' must be a whole number.")
             except KeyError:
