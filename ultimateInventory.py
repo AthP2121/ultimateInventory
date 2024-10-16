@@ -27,20 +27,30 @@ CREATE TABLE IF NOT EXISTS components (
 ''')
 conn.commit()
 
+# Helper function to get terminal width
+def get_terminal_width():
+    return os.get_terminal_size().columns
+
 def print_header(title):
-    print(Fore.CYAN + Style.BRIGHT + f"\n{'─' * 40}")
-    print(f"{title.center(40)}")
-    print(f"{'─' * 40}")
+    width = get_terminal_width()
+    print(Fore.CYAN + Style.BRIGHT + f"\n{'─' * width}")
+    print(f"{title.center(width)}")
+    print(f"{'─' * width}")
 
 def print_separator():
-    print(Fore.CYAN + "─" * 40)
+    width = get_terminal_width()
+    print(Fore.CYAN + "─" * width)
 
 def print_table_header():
-    print(Fore.GREEN + Style.BRIGHT + f"{'ID':<4} {'Name':<15} {'Qty':<6} {'Location':<12} {'Category':<10} {'Value':<12}")
-    print(Fore.GREEN + Style.BRIGHT + "═" * 40)
+    width = get_terminal_width()
+    col_width = max(8, (width - 4) // 5)  # Dynamically adjust column width
+    print(Fore.GREEN + Style.BRIGHT + f"{'ID':<{col_width}} {'Name':<{col_width}} {'Qty':<{col_width}} {'Location':<{col_width}} {'Category':<{col_width}} {'Value':<{col_width}}")
+    print(Fore.GREEN + Style.BRIGHT + "═" * width)
 
 def print_component(row):
-    print(Fore.YELLOW + f"{row[0]:<4} {row[1]:<15} {row[2]:<6} {row[3]:<12} {row[4]:<10} {row[5]:<12}")
+    width = get_terminal_width()
+    col_width = max(8, (width - 4) // 5)  # Dynamically adjust column width
+    print(Fore.YELLOW + f"{row[0]:<{col_width}} {row[1]:<{col_width}} {row[2]:<{col_width}} {row[3]:<{col_width}} {row[4]:<{col_width}} {row[5]:<{col_width}}")
 
 # Function to add a new component
 def add_component():
@@ -61,7 +71,7 @@ def add_component():
     VALUES (?, ?, ?, ?, ?)
     ''', (name, quantity, location, category, value))
     conn.commit()
-    print(Fore.GREEN + f"\nComponent '{name}' added successfully!\n")
+    print(Fore.GREEN + f"\nComponent '{name}' with value '{value}' added successfully!\n")
 
 # Function to remove a component by name
 def remove_component():
