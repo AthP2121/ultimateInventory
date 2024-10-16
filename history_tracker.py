@@ -1,6 +1,10 @@
 # history_tracker.py
 import sqlite3
 from datetime import datetime
+from colorama import Fore, Style, init
+
+# Initialize colorama for cross-platform color support
+init(autoreset=True)
 
 # Function to log changes in component history
 def log_component_history(conn, component_id, action, old_quantity=None, new_quantity=None):
@@ -35,10 +39,17 @@ def view_component_history(conn, component_id):
     rows = cursor.fetchall()
 
     if rows:
-        print("\nComponent History:")
-        print("ID | Component ID | Action | Timestamp | Old Quantity | New Quantity")
-        print("-" * 60)
+        # Print a styled header
+        print(Fore.CYAN + Style.BRIGHT + "\nComponent History:")
+        print(Fore.GREEN + Style.BRIGHT + f"{'ID':<5} {'Component ID':<15} {'Action':<15} {'Timestamp':<20} {'Old Quantity':<15} {'New Quantity':<15}")
+        print(Fore.GREEN + "═" * 80)
+        
+        # Print each row in a formatted manner
         for row in rows:
-            print(row)
+            row_id, comp_id, action, timestamp, old_qty, new_qty = row
+            print(Fore.YELLOW + f"{row_id:<5} {comp_id:<15} {action:<15} {timestamp:<20} {str(old_qty):<15} {str(new_qty):<15}")
+        
+        # Print a separator line at the end
+        print(Fore.CYAN + "─" * 80)
     else:
-        print("\nNo history found for this component.")
+        print(Fore.RED + "\nNo history found for this component.")
