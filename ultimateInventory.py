@@ -1,16 +1,20 @@
 import sqlite3
 import os
 import sys
+from colorama import Fore, Style, init
+
+# Initialize colorama for Windows compatibility
+init(autoreset=True)
 
 # Define the path relative to the executable's directory
-base_dir = os.path.dirname(os.path.abspath(sys.executable))  # For the compiled .exe
+base_dir = os.path.dirname(os.path.abspath(sys.executable))
 db_path = os.path.join(base_dir, 'stocktake.db')
 
 # Connect to the SQLite database
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
-# Create the components table if it doesn't exist, including the value column
+# Create the components table if it doesn't exist
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS components (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -23,45 +27,63 @@ CREATE TABLE IF NOT EXISTS components (
 ''')
 conn.commit()
 
+def print_header(title):
+    print(Fore.CYAN + Style.BRIGHT + f"\n{'─' * 40}")
+    print(f"{title.center(40)}")
+    print(f"{'─' * 40}")
+
+def print_separator():
+    print(Fore.CYAN + "─" * 40)
+
+def print_table_header():
+    print(Fore.GREEN + Style.BRIGHT + f"{'ID':<4} {'Name':<15} {'Qty':<6} {'Location':<12} {'Category':<10} {'Value':<12}")
+    print(Fore.GREEN + Style.BRIGHT + "═" * 40)
+
+def print_component(row):
+    print(Fore.YELLOW + f"{row[0]:<4} {row[1]:<15} {row[2]:<6} {row[3]:<12} {row[4]:<10} {row[5]:<12}")
+
 # Function to add a new component
 def add_component():
-    name = input("Enter component name: ")
+    print_header("Add New Component")
+    name = input(Fore.CYAN + "Enter component name: ")
     while True:
         try:
-            quantity = int(input("Enter quantity (whole number): "))
+            quantity = int(input(Fore.CYAN + "Enter quantity (whole number): "))
             break
         except ValueError:
-            print("Error: Quantity must be a whole number (integer). Please try again.")
-    location = input("Enter location: ")
-    category = input("Enter category: ")
-    value = input("Enter value (e.g., resistance, capacitance, etc.): ")
+            print(Fore.RED + "Error: Quantity must be a whole number. Please try again.")
+    location = input(Fore.CYAN + "Enter location: ")
+    category = input(Fore.CYAN + "Enter category: ")
+    value = input(Fore.CYAN + "Enter value (e.g., resistance, capacitance, etc.): ")
     
     cursor.execute('''
     INSERT INTO components (name, quantity, location, category, value)
     VALUES (?, ?, ?, ?, ?)
     ''', (name, quantity, location, category, value))
     conn.commit()
-    print(f"Component '{name}' with value '{value}' added successfully.\n")
+    print(Fore.GREEN + f"\nComponent '{name}' added successfully!\n")
 
 # Function to remove a component by name
 def remove_component():
-    name = input("Enter component name to remove: ")
+    print_header("Remove Component")
+    name = input(Fore.CYAN + "Enter component name to remove: ")
     cursor.execute('''
     DELETE FROM components
     WHERE name = ?
     ''', (name,))
     conn.commit()
-    print(f"Component '{name}' removed successfully.\n")
+    print(Fore.GREEN + f"\nComponent '{name}' removed successfully!\n")
 
 # Function to update the quantity of a component
 def update_component():
-    name = input("Enter component name to update: ")
+    print_header("Update Component Quantity")
+    name = input(Fore.CYAN + "Enter component name to update: ")
     while True:
         try:
-            quantity = int(input("Enter new quantity (whole number): "))
+            quantity = int(input(Fore.CYAN + "Enter new quantity (whole number): "))
             break
         except ValueError:
-            print("Error: Quantity must be a whole number (integer). Please try again.")
+            print(Fore.RED + "Error: Quantity must be a whole number. Please try again.")
     
     cursor.execute('''
     UPDATE components
@@ -69,56 +91,55 @@ def update_component():
     WHERE name = ?
     ''', (quantity, name))
     conn.commit()
-    print(f"Component '{name}' updated successfully.\n")
+    print(Fore.GREEN + f"\nComponent '{name}' updated successfully!\n")
 
 # Function to view all components
 def view_components():
+    print_header("Inventory List")
     cursor.execute('SELECT * FROM components')
     rows = cursor.fetchall()
-    print("\nStocktake Inventory:")
+    print_table_header()
     for row in rows:
-        print(f"ID: {row[0]}, Name: {row[1]}, Quantity: {row[2]}, Location: {row[3]}, Category: {row[4]}, Value: {row[5]}")
+        print_component(row)
     print()
 
 # Function to search components with prioritized fields
 def search_components():
-    keyword = input("Enter keyword to search for: ")
-    found = False  # Track if any results are found
+    print_header("Search Components")
+    keyword = input(Fore.CYAN + "Enter keyword to search for: ")
+    found = False
 
     # Search by name
     cursor.execute('SELECT * FROM components WHERE name LIKE ?', (f'%{keyword}%',))
     name_results = cursor.fetchall()
     if name_results:
-        print("\nSearch Results for Name:")
+        print_header("Results - Name")
+        print_table_header()
         for row in name_results:
-            print(f"ID: {row[0]}, Name: {row[1]}, Quantity: {row[2]}, Location: {row[3]}, Category: {row[4]}, Value: {row[5]}")
+            print_component(row)
         found = True
-    else:
-        print("No results found for Name search.")
 
     # Search by category if no results found for name
     if not found:
         cursor.execute('SELECT * FROM components WHERE category LIKE ?', (f'%{keyword}%',))
         category_results = cursor.fetchall()
         if category_results:
-            print("\nSearch Results for Category:")
+            print_header("Results - Category")
+            print_table_header()
             for row in category_results:
-                print(f"ID: {row[0]}, Name: {row[1]}, Quantity: {row[2]}, Location: {row[3]}, Category: {row[4]}, Value: {row[5]}")
+                print_component(row)
             found = True
-        else:
-            print("No results found for Category search.")
 
     # Search by location if no results found for name or category
     if not found:
         cursor.execute('SELECT * FROM components WHERE location LIKE ?', (f'%{keyword}%',))
         location_results = cursor.fetchall()
         if location_results:
-            print("\nSearch Results for Location:")
+            print_header("Results - Location")
+            print_table_header()
             for row in location_results:
-                print(f"ID: {row[0]}, Name: {row[1]}, Quantity: {row[2]}, Location: {row[3]}, Category: {row[4]}, Value: {row[5]}")
+                print_component(row)
             found = True
-        else:
-            print("No results found for Location search.")
 
     # Search by quantity if no results found and keyword is a number
     if not found:
@@ -127,31 +148,28 @@ def search_components():
             cursor.execute('SELECT * FROM components WHERE quantity = ?', (quantity,))
             quantity_results = cursor.fetchall()
             if quantity_results:
-                print("\nSearch Results for Quantity:")
+                print_header("Results - Quantity")
+                print_table_header()
                 for row in quantity_results:
-                    print(f"ID: {row[0]}, Name: {row[1]}, Quantity: {row[2]}, Location: {row[3]}, Category: {row[4]}, Value: {row[5]}")
+                    print_component(row)
                 found = True
-            else:
-                print("No results found for Quantity search.")
         except ValueError:
-            print("Skipping Quantity search because the keyword is not a number.")
+            print(Fore.RED + "Skipping Quantity search because the keyword is not a number.")
 
     if not found:
-        print("\nNo results found in any field.\n")
-    else:
-        print()
+        print(Fore.RED + "\nNo results found in any field.\n")
 
 # Main loop to run the terminal application
 def main():
     while True:
-        print("Stocktake Inventory Management")
-        print("1. Add Component")
-        print("2. Remove Component")
-        print("3. Update Component")
-        print("4. View Components")
-        print("5. Search Components")
-        print("6. Exit")
-        choice = input("Select an option: ")
+        print_header("Stocktake Inventory Management")
+        print(Fore.CYAN + "1. Add Component")
+        print(Fore.CYAN + "2. Remove Component")
+        print(Fore.CYAN + "3. Update Component")
+        print(Fore.CYAN + "4. View Components")
+        print(Fore.CYAN + "5. Search Components")
+        print(Fore.CYAN + "6. Exit")
+        choice = input(Fore.YELLOW + "Select an option: ")
 
         if choice == '1':
             add_component()
@@ -166,11 +184,10 @@ def main():
         elif choice == '6':
             break
         else:
-            print("Invalid choice. Please select a valid option (1-6).\n")
+            print(Fore.RED + "Invalid choice. Please select a valid option (1-6).\n")
 
-    # Close the connection when exiting the application
     conn.close()
-    print("Exiting the application.")
+    print(Fore.GREEN + "Exiting the application.")
 
 if __name__ == '__main__':
     main()
