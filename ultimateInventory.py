@@ -4,6 +4,11 @@ import sys
 from colorama import Fore, Style, init
 import getpass
 
+# Import functions
+from history_tracker import log_component_history, view_component_history
+from importer import import_from_csv
+
+
 # Initialize colorama for cross-platform color support
 init(autoreset=True)
 
@@ -64,12 +69,7 @@ def print_component(row):
 def add_component():
     print_header("Add New Component")
     name = input(Fore.CYAN + "Enter component name: ")
-    while True:
-        try:
-            quantity = int(input(Fore.CYAN + "Enter quantity (whole number): "))
-            break
-        except ValueError:
-            print(Fore.RED + "Error: Quantity must be a whole number. Please try again.")
+    quantity = int(input(Fore.CYAN + "Enter quantity (whole number): "))
     location = input(Fore.CYAN + "Enter location: ")
     category = input(Fore.CYAN + "Enter category: ")
     value = input(Fore.CYAN + "Enter value (e.g., resistance, capacitance, etc.): ")
@@ -79,37 +79,66 @@ def add_component():
     VALUES (?, ?, ?, ?, ?)
     ''', (name, quantity, location, category, value))
     conn.commit()
+
+    # Log the addition in the history
+    component_id = cursor.lastrowid
+    log_component_history(conn, component_id, "Added", None, quantity)
+
     print(Fore.GREEN + f"\nComponent '{name}' with value '{value}' added successfully!\n")
 
 # Function to remove a component by name
 def remove_component():
     print_header("Remove Component")
     name = input(Fore.CYAN + "Enter component name to remove: ")
-    cursor.execute('''
-    DELETE FROM components
-    WHERE name = ?
-    ''', (name,))
-    conn.commit()
-    print(Fore.GREEN + f"\nComponent '{name}' removed successfully!\n")
+    cursor.execute('SELECT id, quantity FROM components WHERE name = ?', (name,))
+    result = cursor.fetchone()
+
+    if result:
+        component_id, old_quantity = result
+
+        cursor.execute('''
+        DELETE FROM components
+        WHERE id = ?
+        ''', (component_id,))
+        conn.commit()
+
+        # Log the deletion in the history
+        log_component_history(conn, component_id, "Removed", old_quantity, None)
+
+        print(Fore.GREEN + f"\nComponent '{name}' removed successfully!\n")
+    else:
+        print(Fore.RED + f"\nComponent '{name}' not found.\n")
 
 # Function to update the quantity of a component
 def update_component():
     print_header("Update Component Quantity")
     name = input(Fore.CYAN + "Enter component name to update: ")
-    while True:
-        try:
-            quantity = int(input(Fore.CYAN + "Enter new quantity (whole number): "))
-            break
-        except ValueError:
-            print(Fore.RED + "Error: Quantity must be a whole number. Please try again.")
-    
-    cursor.execute('''
-    UPDATE components
-    SET quantity = ?
-    WHERE name = ?
-    ''', (quantity, name))
-    conn.commit()
-    print(Fore.GREEN + f"\nComponent '{name}' updated successfully!\n")
+    cursor.execute('SELECT id, quantity FROM components WHERE name = ?', (name,))
+    result = cursor.fetchone()
+
+    if result:
+        component_id, old_quantity = result
+        new_quantity = int(input(Fore.CYAN + "Enter new quantity (whole number): "))
+
+        cursor.execute('''
+        UPDATE components
+        SET quantity = ?
+        WHERE id = ?
+        ''', (new_quantity, component_id))
+        conn.commit()
+
+        # Log the update in the history
+        log_component_history(conn, component_id, "Updated", old_quantity, new_quantity)
+
+        print(Fore.GREEN + f"\nComponent '{name}' updated successfully!\n")
+    else:
+        print(Fore.RED + f"\nComponent '{name}' not found.\n")
+
+# Function to view the history of a component
+def view_history():
+    print_header("View Component History")
+    component_id = int(input(Fore.CYAN + "Enter component ID to view history: "))
+    view_component_history(conn, component_id)
 
 # Function to view all components
 def view_components():
@@ -276,8 +305,10 @@ def main():
         print(Fore.CYAN + "3. Update Component")
         print(Fore.CYAN + "4. View Components")
         print(Fore.CYAN + "5. Search Components")
-        print(Fore.CYAN + "6. Advanced Options")
-        print(Fore.CYAN + "7. Exit")
+        print(Fore.CYAN + "6. View Component History")
+        print(Fore.CYAN + "7. Import Components from CSV")  # New option for import
+        print(Fore.CYAN + "8. Advanced Options")
+        print(Fore.CYAN + "9. Exit")
         choice = input(Fore.YELLOW + "Select an option: ")
 
         if choice == '1':
@@ -291,11 +322,18 @@ def main():
         elif choice == '5':
             search_components()
         elif choice == '6':
-            advanced_options()
+            view_history()
         elif choice == '7':
+            import_from_csv()  # Call the import function
+        elif choice == '8':
+            advanced_options()
+        elif choice == '9':
             break
         else:
-            print(Fore.RED + "Invalid choice. Please select a valid option (1-7).\n")
+            print(Fore.RED + "Invalid choice. Please select a valid option (1-9).\n")
+
+    conn.close()
+    print(Fore.GREEN + "Exiting the application.")
 
     conn.close()
     print(Fore.GREEN + "Exiting the application.")
