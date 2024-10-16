@@ -2,9 +2,17 @@
 import sqlite3
 from datetime import datetime
 from colorama import Fore, Style, init
+import os
 
 # Initialize colorama for cross-platform color support
 init(autoreset=True)
+
+# Helper function to get the current terminal width
+def get_terminal_width():
+    try:
+        return os.get_terminal_size().columns
+    except OSError:
+        return 80  # Default width if unable to get terminal size
 
 # Function to log changes in component history
 def log_component_history(conn, component_id, action, old_quantity=None, new_quantity=None):
@@ -39,17 +47,21 @@ def view_component_history(conn, component_id):
     rows = cursor.fetchall()
 
     if rows:
-        # Print a styled header
+        # Get the terminal width and calculate column widths
+        width = get_terminal_width()
+        col_width = max(10, width // 6)
+
+        # Print the header with adaptive width
         print(Fore.CYAN + Style.BRIGHT + "\nComponent History:")
-        print(Fore.GREEN + Style.BRIGHT + f"{'ID':<5} {'Component ID':<15} {'Action':<15} {'Timestamp':<20} {'Old Quantity':<15} {'New Quantity':<15}")
-        print(Fore.GREEN + "═" * 80)
+        print(Fore.GREEN + Style.BRIGHT + f"{'ID':<{col_width}} {'Component ID':<{col_width}} {'Action':<{col_width}} {'Timestamp':<{col_width}} {'Old Quantity':<{col_width}} {'New Quantity':<{col_width}}")
+        print(Fore.GREEN + "═" * width)
         
-        # Print each row in a formatted manner
+        # Print each row with adaptive width
         for row in rows:
             row_id, comp_id, action, timestamp, old_qty, new_qty = row
-            print(Fore.YELLOW + f"{row_id:<5} {comp_id:<15} {action:<15} {timestamp:<20} {str(old_qty):<15} {str(new_qty):<15}")
+            print(Fore.YELLOW + f"{row_id:<{col_width}} {comp_id:<{col_width}} {action:<{col_width}} {timestamp:<{col_width}} {str(old_qty):<{col_width}} {str(new_qty):<{col_width}}")
         
         # Print a separator line at the end
-        print(Fore.CYAN + "─" * 80)
+        print(Fore.CYAN + "─" * width)
     else:
         print(Fore.RED + "\nNo history found for this component.")

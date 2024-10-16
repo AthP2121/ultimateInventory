@@ -8,6 +8,8 @@ import getpass
 from history_tracker import log_component_history, view_component_history
 from importer import import_from_csv
 
+import csv
+
 
 # Initialize colorama for cross-platform color support
 init(autoreset=True)
@@ -296,6 +298,31 @@ def advanced_options():
         except sqlite3.Error as e:
             print(Fore.RED + f"An error occurred: {e}")
 
+
+def export_to_csv():
+    print_header("Export Inventory to CSV")
+    export_path = os.path.join(base_dir, 'inventory_export.csv')
+
+    # Fetch all components
+    cursor.execute('SELECT * FROM components')
+    rows = cursor.fetchall()
+
+    # Define CSV headers
+    headers = ['ID', 'Name', 'Quantity', 'Location', 'Category', 'Value']
+
+    # Write to CSV
+    try:
+        with open(export_path, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(headers)
+            writer.writerows(rows)
+
+        print(Fore.GREEN + f"\nInventory successfully exported to {export_path}\n")
+    except IOError:
+        print(Fore.RED + "\nError: Unable to write to CSV file. Please check permissions or file path.\n")
+
+
+
 # Main loop to run the terminal application
 def main():
     while True:
@@ -309,6 +336,8 @@ def main():
         print(Fore.CYAN + "7. Import Components from CSV")  # New option for import
         print(Fore.CYAN + "8. Advanced Options")
         print(Fore.CYAN + "9. Exit")
+        print(Fore.CYAN + "10. Export Inventory to CSV")  # New option for export
+        
         choice = input(Fore.YELLOW + "Select an option: ")
 
         if choice == '1':
@@ -327,6 +356,8 @@ def main():
             import_from_csv()  # Call the import function
         elif choice == '8':
             advanced_options()
+        elif choice == '10':
+            export_to_csv()
         elif choice == '9':
             break
         else:
