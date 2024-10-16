@@ -1,10 +1,9 @@
 import sqlite3
 import os
 import sys
-import signal
 from colorama import Fore, Style, init
 
-# Initialize colorama for Windows compatibility
+# Initialize colorama for cross-platform color support
 init(autoreset=True)
 
 # Define the path relative to the executable's directory
@@ -28,34 +27,33 @@ CREATE TABLE IF NOT EXISTS components (
 ''')
 conn.commit()
 
-# Helper function to get terminal width, refreshed each time called
+# Helper function to get the current terminal width
 def get_terminal_width():
-    return os.get_terminal_size().columns
-
-# Signal handler for window resize to dynamically update terminal width
-current_width = get_terminal_width()
-
-def handle_resize(signum, frame):
-    global current_width
-    current_width = get_terminal_width()
-
-signal.signal(signal.SIGWINCH, handle_resize)
+    try:
+        return os.get_terminal_size().columns
+    except OSError:
+        # Default width if terminal size can't be determined (e.g., in some IDEs or Windows versions)
+        return 80
 
 def print_header(title):
-    print(Fore.CYAN + Style.BRIGHT + f"\n{'─' * current_width}")
-    print(f"{title.center(current_width)}")
-    print(f"{'─' * current_width}")
+    width = get_terminal_width()
+    print(Fore.CYAN + Style.BRIGHT + f"\n{'─' * width}")
+    print(f"{title.center(width)}")
+    print(f"{'─' * width}")
 
 def print_separator():
-    print(Fore.CYAN + "─" * current_width)
+    width = get_terminal_width()
+    print(Fore.CYAN + "─" * width)
 
 def print_table_header():
-    col_width = max(8, (current_width - 4) // 5)  # Adjust column width
+    width = get_terminal_width()
+    col_width = max(10, width // 6)  # Adjust column width
     print(Fore.GREEN + Style.BRIGHT + f"{'ID':<{col_width}} {'Name':<{col_width}} {'Qty':<{col_width}} {'Location':<{col_width}} {'Category':<{col_width}} {'Value':<{col_width}}")
-    print(Fore.GREEN + Style.BRIGHT + "═" * current_width)
+    print(Fore.GREEN + Style.BRIGHT + "═" * width)
 
 def print_component(row):
-    col_width = max(8, (current_width - 4) // 5)  # Adjust column width
+    width = get_terminal_width()
+    col_width = max(10, width // 6)  # Adjust column width
     print(Fore.YELLOW + f"{row[0]:<{col_width}} {row[1]:<{col_width}} {row[2]:<{col_width}} {row[3]:<{col_width}} {row[4]:<{col_width}} {row[5]:<{col_width}}")
 
 # Function to add a new component
