@@ -121,61 +121,120 @@ def view_components():
         print_component(row)
     print()
 
-# Function to search components with prioritized fields
 def search_components():
     print_header("Search Components")
+    print(Fore.CYAN + "Search by specific field:")
+    print(Fore.CYAN + "1. ID")
+    print(Fore.CYAN + "2. Name")
+    print(Fore.CYAN + "3. Category")
+    print(Fore.CYAN + "4. Location")
+    print(Fore.CYAN + "5. Quantity")
+    print(Fore.CYAN + "Leave blank or press Enter to search all fields")
+    
+    choice = input(Fore.YELLOW + "Choose an option (1-5) or press Enter for all: ")
     keyword = input(Fore.CYAN + "Enter keyword to search for: ")
     found = False
 
-    # Search by name
-    cursor.execute('SELECT * FROM components WHERE name LIKE ?', (f'%{keyword}%',))
-    name_results = cursor.fetchall()
-    if name_results:
-        print_header("Results - Name")
-        print_table_header()
-        for row in name_results:
-            print_component(row)
-        found = True
-
-    # Search by category if no results found for name
-    if not found:
-        cursor.execute('SELECT * FROM components WHERE category LIKE ?', (f'%{keyword}%',))
-        category_results = cursor.fetchall()
-        if category_results:
-            print_header("Results - Category")
-            print_table_header()
-            for row in category_results:
-                print_component(row)
-            found = True
-
-    # Search by location if no results found for name or category
-    if not found:
-        cursor.execute('SELECT * FROM components WHERE location LIKE ?', (f'%{keyword}%',))
-        location_results = cursor.fetchall()
-        if location_results:
-            print_header("Results - Location")
-            print_table_header()
-            for row in location_results:
-                print_component(row)
-            found = True
-
-    # Search by quantity if no results found and keyword is a number
-    if not found:
+    # Search by ID if chosen
+    if choice == '1':
         try:
-            quantity = int(keyword)
-            cursor.execute('SELECT * FROM components WHERE quantity = ?', (quantity,))
-            quantity_results = cursor.fetchall()
-            if quantity_results:
-                print_header("Results - Quantity")
+            item_id = int(keyword)
+            cursor.execute('SELECT * FROM components WHERE id = ?', (item_id,))
+            results = cursor.fetchall()
+            if results:
+                print_header("Results - ID")
                 print_table_header()
-                for row in quantity_results:
+                for row in results:
                     print_component(row)
                 found = True
         except ValueError:
-            print(Fore.RED + "Skipping Quantity search because the keyword is not a number.")
+            print(Fore.RED + "Error: ID search requires a numeric keyword.")
+    
+    # Search by Name if chosen
+    elif choice == '2':
+        cursor.execute('SELECT * FROM components WHERE name LIKE ?', (f'%{keyword}%',))
+        results = cursor.fetchall()
+        if results:
+            print_header("Results - Name")
+            print_table_header()
+            for row in results:
+                print_component(row)
+            found = True
 
-    if not found:
-        print(Fore.RED + "\nNo results found in any field.\n")
+    # Search by Category if chosen
+    elif choice == '3':
+        cursor.execute('SELECT * FROM components WHERE category LIKE ?', (f'%{keyword}%',))
+        results = cursor.fetchall()
+        if results:
+            print_header("Results - Category")
+            print_table_header()
+            for row in results:
+                print_component(row)
+            found = True
+
+    # Search by Location if chosen
+    elif choice == '4':
+        cursor.execute('SELECT * FROM components WHERE location LIKE ?', (f'%{keyword}%',))
+        results = cursor.fetchall()
+        if results:
+            print_header("Results - Location")
+            print_table_header()
+            for row in results:
+                print_component(row)
+            found = True
+
+    # Search by Quantity if chosen
+    elif choice == '5':
+        try:
+            quantity = int(keyword)
+            cursor.execute('SELECT * FROM components WHERE quantity = ?', (quantity,))
+            results = cursor.fetchall()
+            if results:
+                print_header("Results - Quantity")
+                print_table_header()
+                for row in results:
+                    print_component(row)
+                found = True
+        except ValueError:
+            print(Fore.RED + "Error: Quantity search requires a numeric keyword.")
+
+    # If no specific field was chosen, perform a search across all fields
+    else:
+        # General search logic as before
+        # Search by ID (assuming the keyword is numeric)
+        try:
+            item_id = int(keyword)
+            cursor.execute('SELECT * FROM components WHERE id = ?', (item_id,))
+            results = cursor.fetchall()
+            if results:
+                print_header("Results - ID")
+                print_table_header()
+                for row in results:
+                    print_component(row)
+                found = True
+        except ValueError:
+            pass  # Skip if keyword is not numeric
+
+        # Search by Name if not found
+        if not found:
+            cursor.execute('SELECT * FROM components WHERE name LIKE ?', (f'%{keyword}%',))
+            results = cursor.fetchall()
+            if results:
+                print_header("Results - Name")
+                print_table_header()
+                for row in results:
+                    print_component(row)
+                found = True
+
+        # Search by Category if not found
+        if not found:
+            cursor.execute('SELECT * FROM components WHERE category LIKE ?', (f'%{keyword}%',))
+            results = cursor.fetchall()
+            if results:
+                print_header("Results - Category")
+                print_table
+
+
 
 # Advanced option: Direct SQL access with password protection
 def advanced_options():
