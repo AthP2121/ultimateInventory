@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import sys
+import signal
 from colorama import Fore, Style, init
 
 # Initialize colorama for Windows compatibility
@@ -27,29 +28,34 @@ CREATE TABLE IF NOT EXISTS components (
 ''')
 conn.commit()
 
-# Helper function to get terminal width
+# Helper function to get terminal width, refreshed each time called
 def get_terminal_width():
     return os.get_terminal_size().columns
 
+# Signal handler for window resize to dynamically update terminal width
+current_width = get_terminal_width()
+
+def handle_resize(signum, frame):
+    global current_width
+    current_width = get_terminal_width()
+
+signal.signal(signal.SIGWINCH, handle_resize)
+
 def print_header(title):
-    width = get_terminal_width()
-    print(Fore.CYAN + Style.BRIGHT + f"\n{'─' * width}")
-    print(f"{title.center(width)}")
-    print(f"{'─' * width}")
+    print(Fore.CYAN + Style.BRIGHT + f"\n{'─' * current_width}")
+    print(f"{title.center(current_width)}")
+    print(f"{'─' * current_width}")
 
 def print_separator():
-    width = get_terminal_width()
-    print(Fore.CYAN + "─" * width)
+    print(Fore.CYAN + "─" * current_width)
 
 def print_table_header():
-    width = get_terminal_width()
-    col_width = max(8, (width - 4) // 5)  # Dynamically adjust column width
+    col_width = max(8, (current_width - 4) // 5)  # Adjust column width
     print(Fore.GREEN + Style.BRIGHT + f"{'ID':<{col_width}} {'Name':<{col_width}} {'Qty':<{col_width}} {'Location':<{col_width}} {'Category':<{col_width}} {'Value':<{col_width}}")
-    print(Fore.GREEN + Style.BRIGHT + "═" * width)
+    print(Fore.GREEN + Style.BRIGHT + "═" * current_width)
 
 def print_component(row):
-    width = get_terminal_width()
-    col_width = max(8, (width - 4) // 5)  # Dynamically adjust column width
+    col_width = max(8, (current_width - 4) // 5)  # Adjust column width
     print(Fore.YELLOW + f"{row[0]:<{col_width}} {row[1]:<{col_width}} {row[2]:<{col_width}} {row[3]:<{col_width}} {row[4]:<{col_width}} {row[5]:<{col_width}}")
 
 # Function to add a new component
