@@ -2,6 +2,7 @@ import sqlite3
 import os
 import sys
 from colorama import Fore, Style, init
+import getpass
 
 # Initialize colorama for cross-platform color support
 init(autoreset=True)
@@ -13,6 +14,9 @@ db_path = os.path.join(base_dir, 'stocktake.db')
 # Connect to the SQLite database
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
+
+# Password for accessing advanced options
+ADVANCED_PASSWORD = "YourSecurePasswordHere"  # Replace with a strong password
 
 # Create the components table if it doesn't exist
 cursor.execute('''
@@ -173,6 +177,37 @@ def search_components():
     if not found:
         print(Fore.RED + "\nNo results found in any field.\n")
 
+# Advanced option: Direct SQL access with password protection
+def advanced_options():
+    password = getpass.getpass(Fore.YELLOW + "Enter password for advanced options: ")
+    if password != ADVANCED_PASSWORD:
+        print(Fore.RED + "Incorrect password. Access denied.")
+        return
+    
+    print(Fore.GREEN + "Access granted to advanced options.")
+    
+    while True:
+        print_header("Advanced Database Access")
+        print(Fore.CYAN + "Type 'exit' to return to the main menu.")
+        query = input(Fore.YELLOW + "Enter SQL command: ")
+        
+        if query.lower() == 'exit':
+            break
+
+        try:
+            cursor.execute(query)
+            conn.commit()
+            results = cursor.fetchall()
+            if results:
+                print_separator()
+                for row in results:
+                    print(row)
+                print_separator()
+            else:
+                print(Fore.GREEN + "Command executed successfully.")
+        except sqlite3.Error as e:
+            print(Fore.RED + f"An error occurred: {e}")
+
 # Main loop to run the terminal application
 def main():
     while True:
@@ -182,7 +217,8 @@ def main():
         print(Fore.CYAN + "3. Update Component")
         print(Fore.CYAN + "4. View Components")
         print(Fore.CYAN + "5. Search Components")
-        print(Fore.CYAN + "6. Exit")
+        print(Fore.CYAN + "6. Advanced Options")
+        print(Fore.CYAN + "7. Exit")
         choice = input(Fore.YELLOW + "Select an option: ")
 
         if choice == '1':
@@ -196,9 +232,11 @@ def main():
         elif choice == '5':
             search_components()
         elif choice == '6':
+            advanced_options()
+        elif choice == '7':
             break
         else:
-            print(Fore.RED + "Invalid choice. Please select a valid option (1-6).\n")
+            print(Fore.RED + "Invalid choice. Please select a valid option (1-7).\n")
 
     conn.close()
     print(Fore.GREEN + "Exiting the application.")
